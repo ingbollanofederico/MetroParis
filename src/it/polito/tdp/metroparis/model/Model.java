@@ -29,7 +29,7 @@ import it.polito.tdp.metroparis.db.MetroDAO;
 
 public class Model {
 	
-	private class EdgeTraversedGraphListener implements TraversalListener<Fermata, DefaultWeightedEdge> {
+	private class EdgeTraversedGraphListener implements TraversalListener<Fermata, DefaultWeightedEdge> {//IMPLEMENTAZIONE LISTENER IN CODE
 
 		@Override
 		public void connectedComponentFinished(ConnectedComponentTraversalEvent e) {			
@@ -68,21 +68,24 @@ public class Model {
 
 	public void creaGrafo() {
 
-		// Crea l'oggetto grafo
+		//1. Crea l'oggetto grafo
 		this.grafo = new SimpleDirectedWeightedGraph<>(DefaultWeightedEdge.class);
-
+		
 		// Aggiungi i vertici
-		MetroDAO dao = new MetroDAO();
-		this.fermate = dao.getAllFermate();
+				MetroDAO dao = new MetroDAO();
+				this.fermate = dao.getAllFermate();
 
-		// crea idMap
+		//2. crea idMap
 		this.fermateIdMap = new HashMap<>();
 		for (Fermata f : this.fermate)
 			fermateIdMap.put(f.getIdFermata(), f);
+		
+
+
 
 		Graphs.addAllVertices(this.grafo, this.fermate);
 
-		// Aggiungi gli archi
+		//4. Aggiungi gli archi
 
 		for (Fermata partenza : this.grafo.vertexSet()) {
 			List<Fermata> arrivi = dao.stazioniArrivo(partenza, fermateIdMap);
@@ -91,38 +94,35 @@ public class Model {
 				this.grafo.addEdge(partenza, arrivo);
 		}
 		
-		// Aggiungi i pesi agli archi
+		//5. Aggiungi i pesi agli archi
 		
 		List<ConnessioneVelocita> archipesati = dao.getConnessionieVelocita() ;
 		for(ConnessioneVelocita cp: archipesati) {
 			Fermata partenza = fermateIdMap.get(cp.getStazP()) ;
 			Fermata arrivo = fermateIdMap.get(cp.getStazA()) ;
+			
+			//CALCOLO LA DISTANZA CON FUNZIONE COORDINATE!!!
 			double distanza = LatLngTool.distance(partenza.getCoords(), arrivo.getCoords(), LengthUnit.KILOMETER) ;
 			double peso = distanza / cp.getVelocita() * 3600; /* tempo in secondi */ 
 					
 			grafo.setEdgeWeight(partenza,  arrivo, peso);
 			
-			// OPPURE (aggiungo archi e vertici insieme): Graphs.addEdgeWithVertices(grafo, partenza, arrivo, peso) ;
+			// OPPURE (aggiungo archi e vertici insieme) SOLUZIONE IN CUI ARCHI HANNO PESO: Graphs.addEdgeWithVertices(grafo, partenza, arrivo, peso) ;
 		}
 
 
 	}
 
 	public List<Fermata> fermateRaggiungibili(Fermata source) {
-
 		List<Fermata> result = new ArrayList<Fermata>();
+		//Map<Fermata, Fermata> backVisit; GENERATA FUORI
 		backVisit = new HashMap<>();
 
 		GraphIterator<Fermata, DefaultWeightedEdge> it = new BreadthFirstIterator<>(this.grafo, source);
-
 		it.addTraversalListener(new Model.EdgeTraversedGraphListener());
-		
 		backVisit.put(source, null);
 
-		while (it.hasNext()) {
-			result.add(it.next());
-		}
-
+		while (it.hasNext()) {result.add(it.next());}
 		return result;
 
 	}
@@ -153,7 +153,7 @@ public class Model {
 		return fermate;
 	}
 	
-	public List<Fermata> trovaCamminoMinimo(Fermata partenza, Fermata arrivo) {
+	public List<Fermata> trovaCamminoMinimo(Fermata partenza, Fermata arrivo) { //6. APPLICAZIONE ALGORITMO CAMMINI MINIMI
 		DijkstraShortestPath<Fermata, DefaultWeightedEdge> dijstra = new DijkstraShortestPath<>(this.grafo) ;
 		GraphPath<Fermata, DefaultWeightedEdge> path = dijstra.getPath(partenza, arrivo) ;
 		return path.getVertexList() ;

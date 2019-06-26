@@ -29,6 +29,7 @@ public class MetroDAO {
 			while (rs.next()) {
 				Fermata f = new Fermata(rs.getInt("id_Fermata"), rs.getString("nome"),
 						new LatLng(rs.getDouble("coordx"), rs.getDouble("coordy")));
+				System.out.print(f.getCoords());
 				fermate.add(f);
 			}
 
